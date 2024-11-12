@@ -47,12 +47,20 @@ pacman -Syu --noconfirm --needed "${packages[@]}"
 # Enable services for VNC and other services
 systemctl enable avahi-daemon iwd
 
-# Configure VNC server (assuming user is 'user')
+# Set up VNC password
+echo "user" | vncpasswd -f > /home/user/.vnc/passwd
+chmod 600 /home/user/.vnc/passwd   # Set permissions for the password file.
+
+# Configure VNC startup script
 mkdir -p /home/user/.vnc
-echo "#!/bin/sh" > /home/user/.vnc/xstartup
-echo "unset SESSION_MANAGER" >> /home/user/.vnc/xstartup
-echo "unset DBUS_SESSION_BUS_ADDRESS" >> /home/user/.vnc/xstartup
-echo "exec startxfce4 &" >> /home/user/.vnc/xstartup
+cat <<EOF > /home/user/.vnc/xstartup
+#!/bin/sh
+
+unset SESSION_MANAGER
+unset DBUS_SESSION_BUS_ADDRESS
+
+exec startxfce4 &
+EOF
 
 chmod +x /home/user/.vnc/xstartup
 

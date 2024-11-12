@@ -1,0 +1,67 @@
+#!/bin/bash
+
+set -uo pipefail
+
+# Configure system locale to en_US.UTF-8
+sed -i 's/#\(en_US.UTF-8 UTF-8\)/\1/g' /etc/locale.gen
+locale-gen
+echo 'LANG=en_US.UTF-8' > /etc/locale.conf
+
+# Add archsink repo
+cat <<EOF >> /etc/pacman.conf
+
+[archsink]
+Server = https://github.com/archsink/\$arch/releases/latest/download
+SigLevel = Never
+EOF
+
+# Enable parallel downloads
+sed -i 's/#\(ParallelDownloads \)/\1/g' /etc/pacman.conf
+
+# Install useful packages including XFCE and VNC support
+packages=(
+  arch-install-scripts
+  avahi
+  curl
+  git
+  htop
+  iwd
+  man-db
+  neofetch
+  neovim
+  pacman-contrib
+  paru-bin
+  python
+  rsync
+  sudo
+  tmux
+  tree
+  zsh
+  xfce4                 # XFCE desktop environment
+  xfce4-goodies         # Additional XFCE goodies
+  tigervnc              # VNC server for remote access
+)
+
+pacman -Syu --noconfirm --needed "${packages[@]}"
+
+# Enable services for VNC and other services
+systemctl enable avahi-daemon iwd
+
+# Configure VNC server (assuming user is 'user')
+mkdir -p /home/user/.vnc
+echo "#!/bin/sh" > /home/user/.vnc/xstartup
+echo "unset SESSION_MANAGER" >> /home/user/.vnc/xstartup
+echo "unset DBUS_SESSION_BUS_ADDRESS" >> /home/user/.vnc/xstartup
+echo "exec startxfce4 &" >> /home/user/.vnc/xstartup
+
+chmod +x /home/user/.vnc/xstartup
+
+# Start the VNC server (replace 'user' with your actual username)
+su - user -c "vncserver"
+
+# Prepare system for containers (e.g. for use with K3s)
+if ! grep -q cgroup /boot/cmdline.txt; then
+  sed -i '$ s/$/ cgroup_memory=1 cgroup_enable=memory/g' /boot/cmdline.txt
+fi
+
+echo "XFCE and VNC installation complete. You can connect using a VNC client."

@@ -18,9 +18,7 @@ jobs:
         flavor: ['vanilla']
         include:
         - arch: rpi-aarch64
-          flavor: avahi
-        - arch: rpi-aarch64
-          flavor: fwcd
+          flavor: xfce
 
     steps:
     - uses: actions/checkout@v3
